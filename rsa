@@ -1,0 +1,39 @@
+#lang racket
+(require math/base)
+(require math)
+(define (square x) (* x x))
+(define (expmod base exp m)
+  (cond ((= exp 0) 1)
+        ((even? exp)
+         (remainder (square (expmod base (/ exp 2) m))
+                    m))
+        (else
+         (remainder (* base (expmod base (- exp 1) m))
+                    m))))
+(define (fermat-test n)
+  (define (try-it a)
+    (= (expmod a n n) a))
+  (try-it (+ 1 (random-integer 0 (- n 1)))))
+
+(define (fast-prime? n times)
+  (cond ((= times 0) true)
+        ((fermat-test n) (fast-prime? n (- times 1)))
+        (else false)))
+
+(define (getprime nbits)
+  (let ((n (random-bits nbits)))
+    (if (fast-prime? n 25)
+        n
+        (getprime nbits))))
+
+(define p (getprime 32))
+(define q (getprime 32))
+(define n (* p q))
+(define t (* (- p 1) (- q 1)))
+(define e (getprime 31))
+(define d (modular-inverse e t)) 
+(define (encrypt plaintext modulus pubkey)
+  (expmod plaintext pubkey modulus))
+
+(define (decrypt ciphertext modulus privkey)
+  (expmod ciphertext privkey modulus))

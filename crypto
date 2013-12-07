@@ -1,0 +1,67 @@
+#lang racket
+
+(require net/base64)
+
+(define (byte-length n)
+  (ceiling (/ (integer-length n) 8)))
+
+(define (print-as-hex n) 
+  (fprintf (current-output-port) "~X\n" n))
+
+(define (integer->bytes n)
+  (define (bytesplit l n)
+    (define (lastbyte n) (modulo n 256))
+    (if (< n 256)
+        (list n)
+        (append (bytesplit l (floor (/ n 256))) (list (lastbyte n)))))
+  (apply bytes (bytesplit (list) n)))
+
+(define (integer->chars n)
+  (map integer->char (bytes->list (integer->bytes n))))
+
+(define (print-integer-as-string n) (map write-char (integer->chars n)))
+
+(define (repeating-integer->integer i n)
+  (define key-length (byte-length i))
+  (bitwise-xor i (arithmetic-shift 
+                  (repeating-integer->integer i (- length key-length))
+                  (* 8 key-length))))
+
+(define (repeating-byte->integer c n) 
+  (define (ones->integer n)
+    (if (= n 1) 1 (+ 1 (* 256 (ones->integer (- n 1))))))
+  (* (ones->integer n) (char->integer c)))
+
+(define (bool->integer b) (if b 1 0))
+
+(define (boolsum l) (apply + (map bool->integer l)))
+
+(define (score s)
+  (boolsum (map (lambda (c) 
+                  (or (char=? c #\ )
+                      (and (char>=? c #\a) (char<=? c #\z))
+                      (and (char>=? c #\A) (char<=? c #\Z))))
+                (integer->chars s))))
+
+
+(define (find-repeating-char-key ciphertext)
+  (sort
+   (for/list ([c (in-range 0 255)])
+     (define key (repeating-integer->integer c (byte-length ciphertext)))
+     (define plaintext (bitwise-xor ciphertext key))
+     (list (score plaintext) c plaintext))
+   (lambda (a b) (< (first a) (first b)))))
+
+; Problem 1: Convert hex to base64 and back.
+(base64-encode (integer->bytes #x49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d))
+
+; Problem 2: Fixed XOR
+(print-as-hex (bitwise-xor #x1c0111001f010100061a024b53535009181c #x686974207468652062756c6c277320657965))
+
+; Problem 3: Single-character XOR cipher
+(define best-decryption (last (find-repeating-char-key #x1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736)))
+best-decryption
+(printf "Score: ~a\n" (first best-decryption))
+(printf "Key: ~a\n" (second best-decryption))
+(printf "Plaintext: ")
+(integer->bytes (third best-decryption))

@@ -1,0 +1,94 @@
+* Exercises
+** 1.1
+   10
+
+   12
+
+   8
+
+   3
+
+   (+ 8 -2)
+   6
+
+   (+ 3 4 (* 3 4))
+   (+ 3 4 12)
+   19
+
+   false
+
+   (if (and (> 4 3) (< 4 (* 3 4))) 4 3)
+   (if (and true (< 4 12)) 4 3)
+   (if (and true true) 4 3)
+   (if true 4 3)
+   4
+   
+   (cond ((= 3 4) 6)
+         ((= 4 4) (+ 6 7 3))
+	 (else 25))
+   (cond (false 6)
+         (true 16)
+	 (else 25))
+   16
+
+   (+ 2 (if (> 4 3) 4 3))
+   (+ 2 (if true 4 3))
+   (+ 2 4)
+   6
+
+   (* (cond ((> 3 4) 3)
+            ((< 3 4) 4)
+	    (else -1))
+      (+ 3 1))
+   (* (cond (false 3)
+            (true 4)
+	    (else -1))
+      4)
+   (* 4 4)
+   16
+** 1.2
+   (/ (+ 5 4 (- 2 (- 3 (+ 6 (/ 4 5)))))
+      (* 3 (- 6 2) (- 2 7)))
+** 1.3
+   (define (sumsquares a b) (+ (* a a) (* b b)))
+   (define (maxsum a b c) 
+     (cond ((and (< a b) (< a c)) (sumsquares b c))
+           ((and (< b c) (< b a)) (sumsquares c a))
+	   ((and (< c a) (< c b)) (sumsquares a b))))
+** 1.4
+   When b>0, the function returns (+ a b), but when b<=0, the function returns (- a b).
+** 1.5
+   With applicative-order evaluation, the interpreter will attempt to evaluate (p),
+   but because (p) is defined as (p), the interpreter will loop or crash.
+
+   With normal-order evaluation, the interpreter will first expand the expression to:
+   (if (= 0 0) 0 (p)). Then, it will evaluate (= 0 0), which returns #t, leaving:
+   (if #t 0 (p)). The interpreter will ignore (p) and return 0. 
+** 1.6
+   The issue I anticipated was that that sqrt-iter would evaluate sqrt-iter again before checking good-enough?. Initially, I couldn't understand why this would occur, because the cond statement would only evaluate else-clause if predicate were false. I tested this by substituting error functions to check whether the else-clause would be evaluated.
+
+   I forgot that the cond statement was encapsulated in the sqrt-iter function. Because Racket does not use lazy evaluation, the recursive call to sqrt-iter is not passed unchanged to the cond statement, but is instead evaluated, causing an infinite recursion.
+** 1.7
+   The good-enough? test is absolute rather than relative. An error of 0.001 is acceptable for solving for the square root of 10. However, it is not acceptable when solving for the square root of 0.000001.
+   
+   For large numbers, it might be impossible to reduce the error to less than 0.001 as a result of floating-point imprecision.
+
+   A version that continues iterating until guesses change by less than 0.001 per iteration:
+   (define (sqrt-iter guess x lastguess)
+     (if (< (abs (- guess lastguess)) 0.001)
+         guess
+         (sqrt-iter (improve guess x)
+                    x
+		    guess)))
+** 1.8
+   (define (improve guess x)
+     (/ (+ (/ x (* guess guess)) (* 2 guess)) 3))
+   
+   (define (cbrt-iter guess x lastguess)
+     (if (< (abs (- guess lastguess)) 0.001)
+         guess
+         (cbrt-iter (improve guess x)
+                    x
+                    guess)))
+** 1.9
+   Unlike the built-in + function, the defined function only supports two operands. 
